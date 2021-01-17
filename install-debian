@@ -34,6 +34,7 @@ do_prep () {
 
 	PACKAGES="debootstrap pigz dosfstools"
 	[ ! -z "$CRYPT" ] && PACKAGES="$PACKAGES cryptsetup"
+	[ ! -z "$BTRFS" ] && PACKAGES="$PACKAGES btrfs-progs"
 
 	if [ -x "$(command -v apt-get)" ]
 	then
@@ -89,11 +90,11 @@ do_mkfs () {
 
 	if [ -z "$CRYPT" ]
 	then
-		sudo mkfs.ext4 -FL ${BLKNAME}-RootFS ${PARTITION}6
+		sudo mkfs.$FS -L ${BLKNAME}-RootFS ${PARTITION}6
 	else
 		sudo cryptsetup luksFormat ${PARTITION}6
 		sudo cryptsetup open ${PARTITION}6 ${BLKNAME}-RootFS
-		sudo mkfs.ext4 -FL ${BLKNAME}-RootFS /dev/mapper/${BLKNAME}-RootFS
+		sudo mkfs.$FS -L ${BLKNAME}-RootFS /dev/mapper/${BLKNAME}-RootFS
 	fi
 }
 
@@ -324,6 +325,7 @@ ARCH=arm64
 RELEASE=bullseye
 SYSIMAGE="${PWD}/sysimage"
 MMCBLK="$(readlink -f /dev/disk/by-path/platform-fe320000.*mmc)"
+FS=ext4
 
 # For now we have *very* simple argument processing (similar to make)
 unset DO
@@ -340,6 +342,7 @@ do
 done
 [ -z $DO ] && DO=do_all
 
+[ ! -z $BTRFS ] && FS=btrfs
 [ -z $BLKDEV ] && BLKDEV=${MMCBLK}
 [ -z $BLKNAME ] && BLKNAME=`basename ${BLKDEV}`
 case "$BLKDEV" in
